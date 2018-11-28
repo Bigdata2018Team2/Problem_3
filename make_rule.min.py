@@ -94,6 +94,8 @@ if __name__ == "__main__":
         items = list()
         for r in result:
             items += r[0]
-        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, items[:5]))), to_stdout=False)
+        items = set(items)
+        transaction_set = set(transaction)
+        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, list(items.difference(transaction_set))[:5]))), to_stdout=False)
     pb.close()
     

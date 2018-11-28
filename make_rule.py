@@ -1,3 +1,11 @@
+import pandas as pd
+import apyori
+import pickle
+import os
+import sys
+from tqdm import tqdm
+import threading
+
 class Print_Both:
     def __init__(self, file_name, overwrite=False):
         self.file_name = file_name
@@ -32,12 +40,7 @@ def recommendation(transaction):
 
 
 if __name__ == "__main__":
-    import pandas as pd
-    import apyori
-    import pickle
-    import os
-    import sys
-
+    
     if len(sys.argv) < 4:
         print("Usage: {} <file_name> <min_support> <min_confidence>".format(sys.argv[0]))
     
@@ -83,20 +86,19 @@ if __name__ == "__main__":
             transactions_pickle = open("{}/transactions.pickle.{}".format(dump_path, idx), "wb")
             pickle.dump(transactions_values[(idx * pickle_len_per_file):((idx + 1) * pickle_len_per_file)], transactions_pickle)
             transactions_pickle.close()
-            print("dump: {}:{}".format(idx * pickle_len_per_file, (idx + 1) * pickle_len_per_file))
+            # print("dump: {}:{}".format(idx * pickle_len_per_file, (idx + 1) * pickle_len_per_file))
             idx += 1
         if (idx * pickle_len_per_file < transactions_size):
             transactions_pickle = open("{}/transactions.pickle.{}".format(dump_path, idx), "wb")
             pickle.dump(transactions_values[(idx * pickle_len_per_file):], transactions_pickle)
             transactions_pickle.close()
-            print("dump: {}:{}".format(idx * pickle_len_per_file, transactions_size))
+            # print("dump: {}:{}".format(idx * pickle_len_per_file, transactions_size))
     else: # if dump files exist, load them
         print("dump file found")
         print("restructuring transactions")
         dump_file_count = len(os.listdir(dump_path))
         transactions_values = []
-        for i in range(dump_file_count):
-            print("load transactions.pickle.{}".format(i))
+        for i in tqdm(range(dump_file_count)):
             transactions_pickle = open("{}/transactions.pickle.{}".format(dump_path, i), "rb")
             transactions_values += pickle.load(transactions_pickle)
             transactions_pickle.close()
@@ -153,11 +155,21 @@ if __name__ == "__main__":
     if not os.path.isdir(result_path):
         os.mkdir(result_path)
     pb = Print_Both("{}/recommandation.{}-{}.txt".format(result_path, min_support, min_confidence), overwrite=True)
-    for transaction in transactions_values:
+    cnt = 1
+    transactions_size = len(transactions_values)
+    print("     ", end='')
+    for transaction in tqdm(transactions_values):
         result = recommendation(transaction)
         items = list()
         for r in result:
             items += r[0]
-        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, items[:5]))), to_stdout=False)
+        items = set(items)
+        transaction_set = set(transaction)
+        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, list(items.difference(transaction_set))[:5]))), to_stdout=False)
+    
+    # num_of_cores = 4
+    # for thread_num in range(num_of_cores):
+    #     threading.Thread(target=lambda )
+        
     pb.close()
     
