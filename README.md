@@ -4,3 +4,4 @@ Before you start:
 make folders
 1. dumps
 2. rules
+3. result
