@@ -1,3 +1,10 @@
+import pandas as pd
+import apyori
+import pickle
+import os
+import sys
+from tqdm import tqdm
+
 class Print_Both:
     def __init__(self, file_name, overwrite=False):
         self.file_name = file_name
@@ -32,12 +39,6 @@ def recommendation(transaction):
 
 
 if __name__ == "__main__":
-    import pandas as pd
-    import apyori
-    import pickle
-    import os
-    import sys
-
     file_path = "File full path here"
     file_name = os.path.basename(file_path)
     dump_path = os.path.join(os.getcwd(), "dumps/{}.dumps".format(file_name))
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     if not os.path.isdir(result_path):
         os.mkdir(result_path)
     pb = Print_Both("{}/recommandation.{}-{}.txt".format(result_path, min_support, min_confidence), overwrite=True)
-    for transaction in transactions_values:
+    for transaction in tqdm(transactions_values):
         result = recommendation(transaction)
         items = list()
         for r in result:

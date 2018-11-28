@@ -19,7 +19,7 @@ class Print_Both:
         if to_stdout:
             print(string)
         if to_file:
-            self.file.write("{}".format(string))
+            self.file.write("{}\n".format(string))
 
     def close(self):
         self.file.close()
