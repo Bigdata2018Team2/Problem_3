@@ -1,0 +1,99 @@
+class Print_Both:
+    def __init__(self, file_name, overwrite=False):
+        self.file_name = file_name
+        if overwrite:
+            mode = "w"
+        else:
+            mode = "a"
+        self.file = open(file_name, mode)
+
+    def print(self, string, to_stdout=True, to_file=True):
+        if to_stdout:
+            print(string)
+        if to_file:
+            self.file.write("{}".format(string))
+
+    def close(self):
+        self.file.close()
+
+global association_result
+
+def recommendation(transaction):
+    cnt = 1
+    result = list()
+    transaction_set = set(transaction)
+    for item in association_result:
+        for rule in item.ordered_statistics:
+            base = set(rule.items_base)
+            add = list(rule.items_add)
+            if base.issubset(transaction_set):
+                result.append((add, rule.confidence))
+    return sorted(result, reverse=True, key=lambda a: a[1])
+
+
+if __name__ == "__main__":
+    import pandas as pd
+    import apyori
+    import pickle
+    import os
+    import sys
+
+    file_path = "File full path here"
+    file_name = os.path.basename(file_path)
+    dump_path = os.path.join(os.getcwd(), "dumps/{}.dumps".format(file_name))
+    result_path = os.path.join(os.getcwd(), "result/{}.result".format(file_name))
+    rules_path = os.path.join(os.getcwd(), "rules/{}.result".format(file_name))
+
+    print("read csv file...")
+    data = pd.read_csv(file_path)
+
+    print("drop unnecessary columns...")
+    data = data.drop("add_to_cart_order", axis=1)
+    data = data.drop("reordered", axis=1)
+
+    print("convert to tuple...")
+    data_tuple = data.get_values()
+
+    print("convert data to transaction")
+    transactions = {}
+    for row in data_tuple:
+        if row[0] in transactions:
+            transactions[row[0]].append(str(row[1]))
+        else:
+            transactions[row[0]] = [str(row[1])]
+    ids = transactions.keys()
+    transactions_values = list(transactions.values())
+
+    min_support = 0.005
+    min_confidence = 0.2
+    print("make association rules wiht min_support={}, min_confidence={}".format(min_support, min_confidence))
+    association_rule = apyori.apriori(transactions_values, min_support=min_support, min_confidence=min_confidence)
+    association_result = list(association_rule)
+    print("Association rule: {}".format(len(association_result)))
+    
+    print("result===================")
+    cnt = 1
+    for item in association_result:
+        items = [i for i in item.items]
+        print(cnt)
+        print(items)
+        # print(items[0],'\'s tractions:',item_count[items[0]])
+        print("Support:\t",item.support)
+        print("Confidence:\t", item.ordered_statistics[0][2])
+        print("Lift:\t", item.ordered_statistics[0][3])
+        print('==============================================')
+        cnt += 1
+
+    # Recommandation start
+    print("Recommandation start...")
+    if not os.path.isdir(result_path):
+        os.mkdir(result_path)
+    pb = Print_Both("{}/recommandation.{}-{}.txt".format(result_path, min_support, min_confidence), overwrite=True)
+    for transaction in transactions_values:
+        result = recommendation(transaction)
+        items = list()
+        for r in result:
+            items += r[0]
+        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, items[:5]))), to_stdout=False)
+    pb.close()
+    

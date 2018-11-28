@@ -123,10 +123,11 @@ if __name__ == "__main__":
         rule_pickle = open("{}/rules.{}-{}.pickle".format(rules_path, min_support, min_confidence), "rb")
         association_result = pickle.load(rule_pickle)
         rule_pickle.close()
+        print("load rules: {}".format(len(association_result)))
     else:
         print("dump file doesn't exist")
-        print("make transaction rules wiht min_support={}, min_confidence={}".format(min_support, min_confidence))
-        association_rule = apyori.apriori(transactions_values, min_support=min_support, min_confidence=min_confidence, min_lift=3, min_length=2)
+        print("make association rules wiht min_support={}, min_confidence={}".format(min_support, min_confidence))
+        association_rule = apyori.apriori(transactions_values, min_support=min_support, min_confidence=min_confidence)
         association_result = list(association_rule)
         print("Association rule: {}".format(len(association_result)))
 
@@ -148,14 +149,15 @@ if __name__ == "__main__":
         rule_pickle.close()
 
     # Recommandation start
+    print("Recommandation start...")
     if not os.path.isdir(result_path):
         os.mkdir(result_path)
-    pb = Print_Both("{}/recommandation.{}-{}.txt".format(result_path, min_support, min_confidence))
+    pb = Print_Both("{}/recommandation.{}-{}.txt".format(result_path, min_support, min_confidence), overwrite=True)
     for transaction in transactions_values:
         result = recommendation(transaction)
         items = list()
         for r in result:
             items += r[0]
-        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, items[:5]))), to_stdout=True)
+        pb.print("[{}]".format(len(items)) + ",".join(list(map(str, items[:5]))), to_stdout=False)
     pb.close()
     
